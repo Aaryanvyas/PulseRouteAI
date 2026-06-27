@@ -125,12 +125,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       tempMarker.bindPopup(`
-        <div style="font-family: var(--font-body); padding: 4px; max-width: 240px;">
+        <div style="font-family: var(--font-body); padding: 4px; max-width: 250px;">
           <strong style="color: #34d399; font-size: 0.88rem;">📍 Location Captured</strong>
           <p style="font-size: 0.82rem; color: #cbd5e1; margin: 4px 0 8px 0; font-weight: 600;">${escapeHtml(resolvedAddr)}</p>
-          <button class="btn btn-primary" onclick="focusReportForm()" style="width: 100%; padding: 6px 10px; font-size: 0.78rem;">
-            ⚡ Triage Report Here
-          </button>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <button class="btn btn-primary" onclick="autoTriageAtLocation(${lat}, ${lng}, '${escapeHtml(resolvedAddr).replace(/'/g, "\\'")}')" style="width: 100%; padding: 7px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #a855f7, #06b6d4);">
+              ⚡ Auto-Generate Triage Report
+            </button>
+            <button class="btn" onclick="focusReportForm()" style="width: 100%; padding: 5px 10px; font-size: 0.75rem; background: #1e293b; color: #cbd5e1;">
+              ✍️ Custom Report Entry
+            </button>
+          </div>
         </div>
       `).openPopup();
     });
@@ -139,6 +144,26 @@ document.addEventListener("DOMContentLoaded", () => {
   window.focusReportForm = function() {
     triageForm.scrollIntoView({ behavior: "smooth" });
     reportTextInput.focus();
+  };
+
+  window.autoTriageAtLocation = async function(lat, lon, addr) {
+    const sampleEmergencyTexts = [
+      `Flash flood water entered ground floor near ${addr}, residents stranded needing rescue boat and drinking water`,
+      `Building structural crack and wall collapse reported near ${addr}, injured people trapped under debris`,
+      `Transformer explosion and fire spreading near ${addr}, workers evacuated needing ambulance and power clearance`,
+      `Fallen trees blocking main arterial road near ${addr}, heavy traffic gridlock and medical emergency delayed`,
+      `Emergency shelter at ${addr} urgently requires food packets, clean water and medical supplies for evacuees`
+    ];
+
+    const randomText = sampleEmergencyTexts[Math.floor(Math.random() * sampleEmergencyTexts.length)];
+    
+    reportTextInput.value = randomText;
+    latitudeInput.value = lat.toFixed(4);
+    longitudeInput.value = lon.toFixed(4);
+    if (addressInput) addressInput.value = addr;
+
+    // Trigger triage submission
+    triageForm.dispatchEvent(new Event("submit"));
   };
 
   // Render Map Markers
@@ -307,14 +332,23 @@ document.addEventListener("DOMContentLoaded", () => {
   triageForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const text = reportTextInput.value.trim();
-    const address = addressInput ? addressInput.value.trim() : "";
-    const latitude = parseFloat(latitudeInput.value);
-    const longitude = parseFloat(longitudeInput.value);
+    let text = reportTextInput.value.trim();
+    let address = addressInput ? addressInput.value.trim() : "";
+    let latitude = parseFloat(latitudeInput.value);
+    let longitude = parseFloat(longitudeInput.value);
 
-    if (!text || isNaN(latitude) || isNaN(longitude)) {
-      alert("Please provide valid report text, latitude, and longitude.");
-      return;
+    if (isNaN(latitude) || isNaN(longitude)) {
+      // Default to central Mumbai coordinate if unselected
+      latitude = 19.0760;
+      longitude = 72.8777;
+      latitudeInput.value = latitude;
+      longitudeInput.value = longitude;
+    }
+
+    if (!text) {
+      const locName = address || `Coordinates ${latitude}, ${longitude}`;
+      text = `Emergency distress report filed at ${locName}. Immediate medical assistance, evacuation team and supply dispatch requested.`;
+      reportTextInput.value = text;
     }
 
     // Set Loading State
