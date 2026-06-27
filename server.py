@@ -16,6 +16,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 from pulseroute import (
+    DispatchAgent,
     Report,
     assign_location_clusters,
     build_model,
@@ -32,6 +33,7 @@ WEB_DIR = BASE_DIR / "web"
 reports_list: list[Report] = []
 triaged_rows: list[dict[str, object]] = []
 model_instance = None
+dispatch_agent = DispatchAgent()
 
 
 def init_state() -> None:
@@ -182,6 +184,63 @@ class PulseRouteHandler(BaseHTTPRequestHandler):
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": True, "report": created_row}).encode("utf-8"))
+
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+
+        if url_path == "/api/agent/dispatch":
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+                report_id = payload.get("report_id")
+
+                # Find targeted report
+                target_row = None
+                if report_id:
+                    target_row = next((r for r in triaged_rows if r["report_id"] == report_id), None)
+                
+                if not target_row and triaged_rows:
+                    target_row = triaged_rows[0]
+
+                if not target_row:
+                    self.send_response(404)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "No report found to generate dispatch plan"}).encode("utf-8"))
+                    return
+
+                res_list = [r.strip() for r in str(target_row["resources"]).split(",") if r.strip() and r != "none"]
+                
+                plan = dispatch_agent.generate_plan(
+                    report_id=str(target_row["report_id"]),
+                    text=str(target_row["text"]),
+                    lat=float(target_row["latitude"]),
+                    lon=float(target_row["longitude"]),
+                    urgency=str(target_row["predicted_urgency"]),
+                    resources=res_list,
+                )
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "dispatch_plan": {
+                        "report_id": plan.report_id,
+                        "urgency": plan.urgency,
+                        "primary_facility": plan.primary_facility,
+                        "distance_km": plan.distance_km,
+                        "recommended_units": plan.recommended_units,
+                        "tactical_instructions": plan.tactical_instructions,
+                        "estimated_arrival_mins": plan.estimated_arrival_mins,
+                    }
+                }).encode("utf-8"))
 
             except Exception as e:
                 self.send_response(500)
