@@ -98,17 +98,18 @@
             </div>
           </div>
         </div>
-        <div class="map-container" id="map-wrapper">
-          <div class="map-search-overlay">
-            <div class="search-box map-search-input">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <input type="text" id="city-search-input" placeholder="Jump to any city (e.g., Delhi, London, Tokyo)...">
+          <div class="map-container" id="map-wrapper">
+            <div class="map-search-overlay">
+              <div class="search-box map-search-input">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="city-search-input" placeholder="Jump to any city (e.g., Delhi, London, Tokyo)...">
+              </div>
+              <button id="my-location-btn" class="btn-location-jump" title="Fly to my current GPS location">📍 My Location</button>
+              <button id="seed-nearby-btn" class="btn-location-jump btn-seed-nearby" title="Generate realistic emergency incidents near this location">⚡ Incidents Near Me</button>
             </div>
-            <button id="my-location-btn" class="btn-location-jump" title="Fly to my current GPS location">📍 My Location</button>
+            <div id="map"></div>
+            <div class="map-hint">💡 Click anywhere on the map to capture exact street coordinates</div>
           </div>
-          <div id="map"></div>
-          <div class="map-hint">💡 Click anywhere on the map to capture exact street coordinates</div>
-        </div>
       </section>
 
       <!-- Dispatcher Form Section -->

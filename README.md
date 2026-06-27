@@ -35,7 +35,7 @@ The core of PulseRoute AI is modularly designed around Python systems, Machine L
 
 ### 7. Interactive 3D WebGL Command Center (`web/`)
 - A modern single-page application built with HTML5, Vanilla CSS3 (glassmorphic dark theme), Vanilla JavaScript, and **MapLibre GL JS 3D Vector Maps**.
-- Features 3D camera pitch and bearing controls, live browser Geolocation auto-detection (centering on the user's real-life city on startup), global City Search jump controls, real-time OpenStreetMap reverse geocoding on map clicks, one-click auto-triage report generation, and an interactive modal for the AI Dispatch Agent's tactical plans.
+- Features 3D camera pitch and bearing controls, live browser Geolocation auto-detection (centering on the user's real-life city on startup), global City Search jump controls, real-time OpenStreetMap reverse geocoding on map clicks, one-click **Incidents Near Me** dynamic emergency simulation, and an interactive modal for the AI Dispatch Agent's tactical plans.
 
 ---
 

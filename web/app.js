@@ -142,6 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const seedNearbyBtn = document.getElementById("seed-nearby-btn");
+
   // My Location Button Event Listener
   if (myLocationBtn) {
     myLocationBtn.addEventListener("click", () => {
@@ -151,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
           (pos) => {
             const uLat = pos.coords.latitude;
             const uLng = pos.coords.longitude;
-            flyToCoordinate(uLat, uLng, 14);
+            flyToCoordinate(uLat, uLng, 13.5);
             myLocationBtn.textContent = "📍 My Location";
             handleMapClick(uLat, uLng);
           },
@@ -162,6 +164,73 @@ document.addEventListener("DOMContentLoaded", () => {
         );
       }
     });
+  }
+
+  // Seed Nearby Incidents Event Listener
+  if (seedNearbyBtn) {
+    seedNearbyBtn.addEventListener("click", () => {
+      let curLat = parseFloat(latitudeInput.value) || 19.0760;
+      let curLng = parseFloat(longitudeInput.value) || 72.8777;
+      seedIncidentsAroundCoordinate(curLat, curLng);
+    });
+  }
+
+  async function seedIncidentsAroundCoordinate(centerLat, centerLng) {
+    if (seedNearbyBtn) {
+      seedNearbyBtn.disabled = true;
+      seedNearbyBtn.textContent = "⚡ Generating Incidents...";
+    }
+
+    const scenarios = [
+      { text: "Building structural crack and emergency evacuation required near local residential sector", urgencyHint: "critical" },
+      { text: "Severe urban waterlogging and submerged roads, stranded vehicles needing rescue tow and clearance", urgencyHint: "high" },
+      { text: "Electric transformer spark and localized power blackout in commercial district", urgencyHint: "medium" },
+      { text: "Local emergency relief camp requesting extra clean drinking water and food packets by evening", urgencyHint: "high" }
+    ];
+
+    try {
+      for (let i = 0; i < scenarios.length; i++) {
+        // Generate random offset within ~2km radius
+        const offsetLat = centerLat + (Math.random() - 0.5) * 0.03;
+        const offsetLng = centerLng + (Math.random() - 0.5) * 0.03;
+
+        let addr = `Sector ${i + 1}, Near Coordinates ${offsetLat.toFixed(4)}, ${offsetLng.toFixed(4)}`;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${offsetLat}&lon=${offsetLng}&zoom=16`);
+          if (res.ok) {
+            const geoData = await res.json();
+            if (geoData && geoData.display_name) {
+              addr = geoData.display_name.split(",").slice(0, 3).join(",").trim();
+            }
+          }
+        } catch (e) {}
+
+        const reportText = `${scenarios[i].text} near ${addr}. Urgent assistance requested.`;
+
+        await fetch("/api/triage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: reportText,
+            address: addr,
+            latitude: offsetLat,
+            longitude: offsetLng
+          })
+        });
+      }
+
+      await fetchReports();
+      flyToCoordinate(centerLat, centerLng, 13);
+      alert(`Successfully generated and triaged ${scenarios.length} realistic emergency incidents near your target location!`);
+
+    } catch (err) {
+      alert("Error generating nearby incidents: " + err.message);
+    } finally {
+      if (seedNearbyBtn) {
+        seedNearbyBtn.disabled = false;
+        seedNearbyBtn.textContent = "⚡ Incidents Near Me";
+      }
+    }
   }
 
   // City Search Bar Event Listener
