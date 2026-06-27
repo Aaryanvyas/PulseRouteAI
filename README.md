@@ -1,89 +1,82 @@
-# PulseRoute AI 🚨🛰️
+# PulseRoute AI
 
-**Real-time NLP Emergency Triage, Entity Extraction & Geospatial Disaster Command Center**
+PulseRoute AI is an emergency report triage system that converts unstructured distress messages (field reports, calls, tweets) into prioritized, actionable intelligence. It automatically classifies urgency levels, extracts required emergency resources, groups geographically clustered incidents, provides keyword-based explanations, and displays everything on a real-time GIS Command Center dashboard.
 
-PulseRoute AI is an end-to-end Machine Learning and Geospatial Intelligence platform designed to convert noisy, unstructured emergency distress calls, tweets, and field reports into prioritized, actionable triage intelligence. 
-
-I built this system to address a vital challenge in disaster response management: when crisis strikes, rescue teams are overwhelmed by thousands of incoming messages. PulseRoute AI instantly classifies urgency levels, extracts required emergency resources, groups geographically clustered incidents, provides transparent NLP explanations, and presents everything in an interactive GIS Command Center.
+I built this project to tackle a core challenge in disaster management: during natural disasters or major emergencies, first responders receive thousands of incoming messages and need an automated way to instantly prioritize life-threatening situations and allocate resources effectively.
 
 ---
 
-## 🌟 Key Architectural Highlights
+## Technical Architecture
 
-### 1. 🤖 Dual-Engine NLP Urgency Classifier (`src/pulseroute/model.py`)
-- **Primary Model**: Uses a `scikit-learn` Pipeline combining `TfidfVectorizer` (unigrams and bigrams, `ngram_range=(1,2)`) with a balanced `LogisticRegression` classifier (`max_iter=1000`, `class_weight='balanced'`). It predicts 4 urgency tiers: `critical`, `high`, `medium`, and `low`.
-- **Zero-Dependency Fallback Engine**: If `scikit-learn` is unavailable in the environment, the system automatically falls back to a deterministic, keyword-weighted scoring model (`RulesUrgencyModel`). This ensures 100% operational reliability out-of-the-box without strict dependency requirements.
+The core of PulseRoute AI is modularly designed around Python systems, Machine Learning, and GIS mapping.
 
-### 2. 🚑 Rule-Assisted Resource Entity Extraction (`src/pulseroute/resources.py`)
-- Performs regex text normalization and scans raw reports against an emergency taxonomy matrix.
-- Automatically detects and tags 8 distinct resource needs: `ambulance`, `rescue`, `food`, `water`, `shelter`, `electricity`, `fire`, and `road_clearance`.
+### 1. Natural Language Urgency Classification (`src/pulseroute/model.py`)
+- **Primary Pipeline**: Implements a `scikit-learn` pipeline using `TfidfVectorizer` (extracting unigrams and bigrams) and a balanced `LogisticRegression` classifier to predict urgency across four levels: `critical`, `high`, `medium`, and `low`.
+- **Deterministic Fallback Engine**: If `scikit-learn` is not installed in the target execution environment, the system gracefully falls back to a custom keyword-scoring model (`RulesUrgencyModel`). This guarantees zero downtime and instant out-of-the-box execution.
 
-### 3. 📍 Geospatial Incident Clustering (`src/pulseroute/geo.py`)
-- Implements the mathematical **Haversine formula** (`haversine_km`) to calculate exact great-circle spherical distances between latitude and longitude coordinates.
-- Dynamically groups incoming reports within a radial threshold (default `4.0 km`) into spatial cluster IDs, enabling disaster dispatchers to deploy concentrated relief teams to high-density incident zones.
+### 2. Emergency Resource Entity Extraction (`src/pulseroute/resources.py`)
+- Uses regex normalization and keyword taxonomy mapping to automatically identify emergency resource requirements: `ambulance`, `rescue`, `food`, `water`, `shelter`, `electricity`, `fire`, and `road_clearance`.
 
-### 4. 🔍 Explainable AI & Keyword Attribution (`src/pulseroute/explain.py`)
-- Generates transparent, human-readable explanations for every triage decision by isolating high-impact keywords (`trapped`, `bleeding`, `collapsed`, `oxygen`, etc.) that influenced the classification score.
+### 3. Geospatial Incident Clustering (`src/pulseroute/geo.py`)
+- Applies the **Haversine formula** to calculate exact spherical distances across latitude and longitude coordinates.
+- Dynamically groups reports within a radial threshold (default `4.0 km`) into spatial cluster IDs, helping dispatch teams identify high-density disaster zones.
 
-### 5. 🤖 Autonomous AI Dispatch Agent (`src/pulseroute/agent.py`)
-- Formulates automated, tactical emergency response plans for critical and high-urgency incidents.
-- Dynamically queries regional trauma hospitals, fire stations, and disaster relief centers, computing exact proximity (km) and estimated arrival time (ETA) for dispatch teams.
-- Recommends specific response assets (e.g. *Advanced Life Support Ambulances, Hydraulic Extraction Crews*) and generates step-by-step tactical directives.
+### 4. Keyword Attribution & Explainability (`src/pulseroute/explain.py`)
+- Generates transparent, human-readable explanations for every model decision by isolating top contributing keywords (`trapped`, `bleeding`, `collapsed`, `oxygen`, etc.).
 
-### 6. ⚡ Zero-Dependency REST API Server (`server.py`)
-- Built entirely using Python's native standard library modules (`http.server`, `json`, `pathlib`, `mimetypes`).
-- Connects directly to core `pulseroute` package logic, maintains live in-memory state, and exposes lightweight REST endpoints (`/api/reports`, `/api/triage`, `/api/stats`, `/api/agent/dispatch`) while serving static web assets.
+### 5. Autonomous AI Dispatch Agent (`src/pulseroute/agent.py`)
+- Serves as an automated dispatch coordinator. When a critical report is processed, the agent queries regional emergency facilities (hospitals, fire stations, relief shelters), calculates exact proximity (km) and arrival ETAs, recommends specific response units, and generates step-by-step tactical directives.
 
-### 7. 🌐 Interactive Emergency Command Center (`web/`)
-- A modern single-page application built with **HTML5, Vanilla CSS3 (Custom Dark Glassmorphism theme), Vanilla JS, and Leaflet.js GIS mapping**.
-- Features real-time stat counters, color-coded urgency map markers with custom popups, an interactive map coordinate picker, a live report dispatch console, and an interactive **AI Dispatch Plan Modal**.
+### 6. Zero-Dependency REST API & Web Server (`server.py`)
+- Built using Python's native `http.server` standard library modules to keep the backend lightweight without requiring external web frameworks.
+- Maintains in-memory report state, exposes REST endpoints (`/api/reports`, `/api/triage`, `/api/stats`, `/api/agent/dispatch`), and hosts static web assets.
 
-### 8. 🐳 Production Docker Containerization (`Dockerfile`)
-- Containerized for rapid cloud deployment (Render, AWS, GCP, Azure, Railway) using an optimized `python:3.12-slim` Docker image.
+### 7. Interactive Command Center Dashboard (`web/`)
+- A single-page application built with HTML5, Vanilla CSS3 (glassmorphic dark theme), Vanilla JavaScript, and Leaflet.js GIS mapping.
+- Includes live metric cards, interactive map pin popups, click-to-pick coordinate selection, an incident table, and a modal for the AI Dispatch Agent's tactical plans.
 
 ---
 
-## 📁 Project Structure
+## Repository Structure
 
 ```text
 PulseRouteAI/
 ├── data/
-│   └── sample_reports.csv         # Initial dataset of emergency field reports
+│   └── sample_reports.csv         # Sample dataset of emergency field reports
 ├── src/
-│   └── pulseroute/                # Core Python AIML, GIS & Agent Package
-│       ├── __init__.py            # Clean API package exports
+│   └── pulseroute/                # Core Python package
+│       ├── __init__.py            # Package exports
 │       ├── agent.py               # Autonomous AI Dispatch Agent & Hub Locator
-│       ├── cli.py                 # Batch processing CLI pipeline
-│       ├── data.py                # Report data models & CSV I/O
-│       ├── explain.py             # Keyword attribution & model explainability
-│       ├── geo.py                 # Haversine spatial clustering algorithms
+│       ├── cli.py                 # Batch processing CLI script
+│       ├── data.py                # Data structures & CSV handling
+│       ├── explain.py             # Keyword attribution logic
+│       ├── geo.py                 # Haversine spatial clustering
 │       ├── model.py               # TF-IDF + Logistic Regression & Rules fallback
-│       └── resources.py           # NLP entity extraction for emergency supplies
-├── web/                           # Emergency Command Center Web Application
-│   ├── index.html                 # Semantic dashboard layout & Leaflet integration
-│   ├── styles.css                 # Glassmorphism design system & AI Modal styling
-│   └── app.js                     # Async state management, map rendering & AI Agent trigger
-├── tests/                         # Automated Test Suite
-│   ├── test_agent.py              # AI Dispatch Agent unit tests
-│   ├── test_core.py               # Core ML, spatial & extraction unit tests
-│   └── test_server.py             # Integration tests for REST API endpoints
-├── Dockerfile                     # Containerization setup for cloud deployment
-├── .dockerignore                  # Docker build optimization file
-├── server.py                      # Standalone REST API & Web Host Server
-├── pyproject.toml                 # Package configuration metadata
-└── README.md                      # Project documentation
+│       └── resources.py           # Resource entity extraction
+├── web/                           # Command Center Web Dashboard
+│   ├── index.html                 # Dashboard HTML layout & Leaflet map container
+│   ├── styles.css                 # Custom CSS design system
+│   └── app.js                     # Dashboard state, map logic & API integration
+├── tests/                         # Test suite
+│   ├── test_agent.py              # Dispatch agent tests
+│   ├── test_core.py               # Core ML & spatial unit tests
+│   └── test_server.py             # REST API integration tests
+├── Dockerfile                     # Docker container configuration
+├── .dockerignore                  # Docker ignore rules
+├── server.py                      # REST API & static file web server
+├── pyproject.toml                 # Package metadata
+└── README.md                      # Documentation
 ```
 
 ---
 
-## 📡 REST API Reference
+## API Documentation
 
-The backend runs on `http://localhost:8000` by default.
+The REST server runs on `http://localhost:8000`.
 
-### 1. `GET /api/reports`
-Returns all active triaged emergency reports.
+### `GET /api/reports`
+Retrieves all current triaged emergency reports.
 
-**Response `200 OK`**:
 ```json
 {
   "reports": [
@@ -101,143 +94,93 @@ Returns all active triaged emergency reports.
 }
 ```
 
-### 2. `GET /api/stats`
-Returns live metric summaries.
-
-**Response `200 OK`**:
-```json
-{
-  "total_reports": 20,
-  "critical_reports": 6,
-  "high_reports": 7,
-  "active_clusters": 5
-}
-```
-
-### 3. `POST /api/triage`
-Submits a new raw emergency report for instant ML classification and spatial clustering.
+### `POST /api/triage`
+Submits a new raw report for instant ML triage and clustering.
 
 **Request Payload**:
 ```json
 {
-  "text": "Flash flood warning, family stranded on rooftop needing immediate food and drinking water",
+  "text": "Flash flood warning, family stranded on roof needing food and clean water",
   "latitude": 19.0750,
   "longitude": 72.8800
 }
 ```
 
-**Response `201 Created`**:
+### `POST /api/agent/dispatch`
+Generates a tactical response plan from the AI Dispatch Agent for a given report.
+
+**Request Payload**:
 ```json
 {
-  "success": true,
-  "report": {
-    "report_id": "R021",
-    "text": "Flash flood warning, family stranded on rooftop needing immediate food and drinking water",
-    "latitude": 19.075,
-    "longitude": 72.88,
-    "predicted_urgency": "critical",
-    "resources": "food,water",
-    "cluster_id": 1,
-    "explanation": "food,water"
-  }
+  "report_id": "R004"
 }
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## How to Run locally
 
-### Environment Setup
+### 1. Setup Environment
 
-1. **Clone the repository and enter directory**:
-   ```bash
-   git clone https://github.com/Aaryanvyas/PulseRouteAI.git
-   cd PulseRouteAI
-   ```
+Clone the repository and set up a virtual environment:
 
-2. **Create and activate a virtual environment**:
-   - On Windows (PowerShell / CMD):
-     ```bash
-     python -m venv .venv
-     .venv\Scripts\activate
-     ```
-   - On Linux / macOS:
-     ```bash
-     python3 -m venv .venv
-     source .venv/bin/activate
-     ```
+```bash
+git clone https://github.com/Aaryanvyas/PulseRouteAI.git
+cd PulseRouteAI
 
-3. **Install the package in editable mode**:
-   ```bash
-   pip install -e .
-   ```
+# Create virtual environment
+python -m venv .venv
 
----
+# Activate environment (Windows PowerShell)
+.venv\Scripts\activate
 
-### Running the Project
+# Activate environment (Linux / macOS)
+source .venv/bin/activate
 
-#### Option A: Launch the Interactive Web Dashboard & REST Server
-Run the standalone server:
+# Install package in editable mode
+pip install -e .
+```
+
+### 2. Start the Web Dashboard & REST API
+Run the server:
 ```bash
 python server.py
 ```
-Open your browser and go to **`http://localhost:8000`**. You will see the live GIS map, real-time stat cards, incident table, and dispatch form.
+Open your browser and go to `http://localhost:8000`.
 
-#### Option B: Execute Batch Triage CLI
-Process batch CSV files from the terminal:
+### 3. Run Batch CLI Processing
+To run batch triage directly on a CSV file:
 ```bash
 python -m pulseroute.cli --input data/sample_reports.csv --output triage_output.csv
 ```
 
 ---
 
-## 🧪 Automated Testing Suite
+## Running Tests
 
-I wrote comprehensive unit and integration tests covering core NLP functions, spatial math, and web API endpoints.
+To run the complete unit and integration test suite:
 
-To run the full test suite:
+**Windows**:
+```powershell
+$env:PYTHONPATH="src"; python -m unittest discover -s tests -v
+```
 
-- On Windows (PowerShell):
-  ```powershell
-  $env:PYTHONPATH="src"; python -m unittest discover -s tests -v
-  ```
-- On Linux / macOS:
-  ```bash
-  PYTHONPATH=src python3 -m unittest discover -s tests -v
-  ```
-
-**Test Output Verification**:
-```text
-test_cluster_assignment_groups_nearby_reports ... ok
-test_explanation_returns_relevant_keywords ... ok
-test_haversine_distance_is_reasonable ... ok
-test_resource_extraction_detects_multiple_needs ... ok
-test_rules_model_marks_life_threatening_report_critical ... ok
-test_get_reports ... ok
-test_post_triage ... ok
-
-----------------------------------------------------------------------
-Ran 7 tests in 2.377s - OK
+**Linux / macOS**:
+```bash
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
 ---
 
-## 💼 Resume Bullets & Achievements
+## Docker Deployment
 
-- **Built PulseRoute AI**, an NLP-powered disaster triage platform that processes unstructured emergency reports to predict urgency and extract resource requirements in real time.
-- **Engineered a dual ML engine** utilizing TF-IDF Vectorization and Logistic Regression with balanced class weighting, alongside a zero-dependency rule-based fallback model for guaranteed uptime.
-- **Implemented Geospatial Incident Clustering** using the Haversine formula to group nearby emergency calls into spatial response zones.
-- **Designed & Developed an Emergency Command Center** web application with Leaflet GIS mapping, custom glassmorphic UI, and a zero-dependency Python REST backend (`http.server`).
-- **Achieved 100% test pass rate** across unit and HTTP integration tests using Python's `unittest` framework.
+To build and run the application using Docker:
 
----
-
-## 🛣️ Future Enhancements & Roadmap
-
-1. **Transformer Upgrade**: Fine-tune a lightweight DistilBERT model for multilingual incident classification (supporting Hindi, Hinglish, and Marathi distress messages).
-2. **Automated Routing**: Integrate OpenStreetMap (OSRM) API to dynamically compute shortest routes for emergency vehicles to nearest hospital or relief shelter.
-3. **Omnichannel Messaging Bot**: Connect Twilio / WhatsApp APIwebhooks to ingest emergency SMS messages directly into the triage queue.
+```bash
+docker build -t pulseroute-ai .
+docker run -p 8000:8000 pulseroute-ai
+```
 
 ---
 
-*Authored with ❤️ by Aaryan Vyas*
+Author: Aaryan Vyas
