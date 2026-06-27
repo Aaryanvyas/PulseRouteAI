@@ -61,6 +61,20 @@ class DispatchAgent:
                 min_dist = dist
                 best_facility = facility
 
+        # If location is globally far (> 25km), synthesize a dynamic regional facility for that area
+        if min_dist > 25.0:
+            type_title = (preferred_type or "trauma_hospital").replace("_", " ").title()
+            synth_name = f"Regional {type_title} Division (Zone {int(lat)}N-{int(lon)}E)"
+            synth_facility = EmergencyFacility(
+                facility_id="FAC-GLOBAL",
+                name=synth_name,
+                facility_type=preferred_type or "hospital",
+                latitude=round(lat + 0.015, 4),
+                longitude=round(lon + 0.015, 4),
+                available_units=["Rapid Response Emergency Squad", "Mobile Field Hospital Unit", "Logistics Truck"]
+            )
+            return synth_facility, round(haversine_km(lat, lon, synth_facility.latitude, synth_facility.longitude), 2)
+
         return best_facility, round(min_dist, 2)
 
     def generate_plan(self, report_id: str, text: str, lat: float, lon: float, urgency: str, resources: list[str]) -> DispatchPlan:

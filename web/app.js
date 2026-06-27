@@ -79,8 +79,8 @@ document.addEventListener("DOMContentLoaded", () => {
       subdomains: "abcd"
     }).addTo(map);
 
-    // Map click to select coordinates
-    map.on("click", (e) => {
+    // Map click to select coordinates and reverse-geocode address
+    map.on("click", async (e) => {
       const { lat, lng } = e.latlng;
       latitudeInput.value = lat.toFixed(4);
       longitudeInput.value = lng.toFixed(4);
@@ -90,15 +90,56 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       tempMarker = L.circleMarker([lat, lng], {
-        radius: 8,
+        radius: 9,
         fillColor: "#06b6d4",
         color: "#ffffff",
         weight: 2,
         opacity: 1,
         fillOpacity: 0.9
-      }).addTo(map).bindPopup("<b>Target Location Selected</b><br>Coordinates captured for report dispatch.").openPopup();
+      }).addTo(map);
+
+      tempMarker.bindPopup(`
+        <div style="font-family: var(--font-body); padding: 4px;">
+          <strong style="color: #38bdf8; font-size: 0.9rem;">📍 Capturing Location...</strong>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Fetching street address for ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
+        </div>
+      `).openPopup();
+
+      let resolvedAddr = `Coordinates ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`);
+        if (res.ok) {
+          const geoData = await res.json();
+          if (geoData && geoData.display_name) {
+            // Shorten display name to primary street / neighborhood / city
+            const parts = geoData.display_name.split(",");
+            resolvedAddr = parts.slice(0, 4).join(",").trim();
+          }
+        }
+      } catch (err) {
+        console.warn("[PulseRoute GIS] Online reverse geocoding fallback");
+      }
+
+      if (addressInput) {
+        addressInput.value = resolvedAddr;
+      }
+
+      tempMarker.bindPopup(`
+        <div style="font-family: var(--font-body); padding: 4px; max-width: 240px;">
+          <strong style="color: #34d399; font-size: 0.88rem;">📍 Location Captured</strong>
+          <p style="font-size: 0.82rem; color: #cbd5e1; margin: 4px 0 8px 0; font-weight: 600;">${escapeHtml(resolvedAddr)}</p>
+          <button class="btn btn-primary" onclick="focusReportForm()" style="width: 100%; padding: 6px 10px; font-size: 0.78rem;">
+            ⚡ Triage Report Here
+          </button>
+        </div>
+      `).openPopup();
     });
   }
+
+  window.focusReportForm = function() {
+    triageForm.scrollIntoView({ behavior: "smooth" });
+    reportTextInput.focus();
+  };
 
   // Render Map Markers
   function renderMapMarkers(reports) {
