@@ -45,100 +45,122 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggle3dBtn = document.getElementById("toggle-3d-btn");
   const mapWrapper = document.getElementById("map-wrapper");
 
-  let is3dMode = false;
+  let mapEngine = "maplibre"; // 'maplibre' or 'leaflet'
+  let mapLibreMap = null;
+
+  // Toggle 3D Perspective Button Listener
+  let is3dMode = true;
   if (toggle3dBtn && mapWrapper) {
+    toggle3dBtn.classList.add("active");
+    toggle3dBtn.textContent = "🛰️ 3D Tactical Mode Active";
+
     toggle3dBtn.addEventListener("click", () => {
       is3dMode = !is3dMode;
       if (is3dMode) {
         mapWrapper.classList.add("mode-3d");
         toggle3dBtn.classList.add("active");
-        toggle3dBtn.textContent = "🛰️ 3D Perspective Active";
+        toggle3dBtn.textContent = "🛰️ 3D Tactical Mode Active";
+        if (mapLibreMap) mapLibreMap.easeTo({ pitch: 50, bearing: -20, duration: 1000 });
       } else {
         mapWrapper.classList.remove("mode-3d");
         toggle3dBtn.classList.remove("active");
-        toggle3dBtn.textContent = "🛰️ Toggle 3D Perspective";
+        toggle3dBtn.textContent = "🛰️ Toggle 3D Mode";
+        if (mapLibreMap) mapLibreMap.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
       }
-      setTimeout(() => { map.invalidateSize(); }, 300);
     });
   }
 
-  // Initialize Map
+  // Initialize 3D GIS Map
   function initMap() {
-    // Default center around Mumbai reports region
     const defaultLat = 19.0800;
     const defaultLng = 72.8700;
 
-    map = L.map("map", {
-      zoomControl: true,
-      attributionControl: false
-    }).setView([defaultLat, defaultLng], 11);
+    if (typeof maplibregl !== "undefined") {
+      mapEngine = "maplibre";
+      mapLibreMap = new maplibregl.Map({
+        container: "map",
+        style: {
+          version: 8,
+          sources: {
+            "carto-dark": {
+              type: "raster",
+              tiles: [
+                "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              ],
+              tileSize: 256
+            }
+          },
+          layers: [{ id: "carto-dark-layer", type: "raster", source: "carto-dark", minzoom: 0, maxzoom: 22 }]
+        },
+        center: [defaultLng, defaultLat],
+        zoom: 11.5,
+        pitch: 48,
+        bearing: -18,
+        antialias: true
+      });
 
-    // Dark canvas tiles (CartoDB Dark Matter)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 19,
-      subdomains: "abcd"
-    }).addTo(map);
+      mapLibreMap.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showCompass: true }), "top-right");
 
-    // Map click to select coordinates and reverse-geocode address
-    map.on("click", async (e) => {
-      const { lat, lng } = e.latlng;
-      latitudeInput.value = lat.toFixed(4);
-      longitudeInput.value = lng.toFixed(4);
+      mapLibreMap.on("click", async (e) => {
+        const lng = e.lngLat.lng;
+        const lat = e.lngLat.lat;
+        handleMapClick(lat, lng);
+      });
 
-      if (tempMarker) {
-        map.removeLayer(tempMarker);
-      }
+    } else {
+      mapEngine = "leaflet";
+      map = L.map("map", { zoomControl: true, attributionControl: false }).setView([defaultLat, defaultLng], 11);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd" }).addTo(map);
+      map.on("click", (e) => handleMapClick(e.latlng.lat, e.latlng.lng));
+    }
+  }
 
-      tempMarker = L.circleMarker([lat, lng], {
-        radius: 9,
-        fillColor: "#06b6d4",
-        color: "#ffffff",
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.9
-      }).addTo(map);
+  async function handleMapClick(lat, lng) {
+    latitudeInput.value = lat.toFixed(4);
+    longitudeInput.value = lng.toFixed(4);
 
-      tempMarker.bindPopup(`
-        <div style="font-family: var(--font-body); padding: 4px;">
-          <strong style="color: #38bdf8; font-size: 0.9rem;">📍 Capturing Location...</strong>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Fetching street address for ${lat.toFixed(4)}, ${lng.toFixed(4)}</p>
-        </div>
-      `).openPopup();
-
-      let resolvedAddr = `Coordinates ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-      try {
-        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`);
-        if (res.ok) {
-          const geoData = await res.json();
-          if (geoData && geoData.display_name) {
-            // Shorten display name to primary street / neighborhood / city
-            const parts = geoData.display_name.split(",");
-            resolvedAddr = parts.slice(0, 4).join(",").trim();
-          }
+    let resolvedAddr = `Coordinates ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16`);
+      if (res.ok) {
+        const geoData = await res.json();
+        if (geoData && geoData.display_name) {
+          const parts = geoData.display_name.split(",");
+          resolvedAddr = parts.slice(0, 4).join(",").trim();
         }
-      } catch (err) {
-        console.warn("[PulseRoute GIS] Online reverse geocoding fallback");
       }
+    } catch (err) {
+      console.warn("[PulseRoute GIS] Online reverse geocoding fallback");
+    }
 
-      if (addressInput) {
-        addressInput.value = resolvedAddr;
-      }
+    if (addressInput) addressInput.value = resolvedAddr;
 
-      tempMarker.bindPopup(`
-        <div style="font-family: var(--font-body); padding: 4px; max-width: 250px;">
-          <strong style="color: #34d399; font-size: 0.88rem;">📍 Location Captured</strong>
-          <p style="font-size: 0.82rem; color: #cbd5e1; margin: 4px 0 8px 0; font-weight: 600;">${escapeHtml(resolvedAddr)}</p>
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <button class="btn btn-primary" onclick="autoTriageAtLocation(${lat}, ${lng}, '${escapeHtml(resolvedAddr).replace(/'/g, "\\'")}')" style="width: 100%; padding: 7px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #a855f7, #06b6d4);">
-              ⚡ Auto-Generate Triage Report
-            </button>
-            <button class="btn" onclick="focusReportForm()" style="width: 100%; padding: 5px 10px; font-size: 0.75rem; background: #1e293b; color: #cbd5e1;">
-              ✍️ Custom Report Entry
-            </button>
-          </div>
+    const popupHtml = `
+      <div style="font-family: var(--font-body); padding: 4px; max-width: 250px;">
+        <strong style="color: #34d399; font-size: 0.88rem;">📍 3D Target Pin Captured</strong>
+        <p style="font-size: 0.82rem; color: #cbd5e1; margin: 4px 0 8px 0; font-weight: 600;">${escapeHtml(resolvedAddr)}</p>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <button class="btn btn-primary" onclick="autoTriageAtLocation(${lat}, ${lng}, '${escapeHtml(resolvedAddr).replace(/'/g, "\\'")}')" style="width: 100%; padding: 7px 10px; font-size: 0.78rem; background: linear-gradient(135deg, #a855f7, #06b6d4);">
+            ⚡ Auto-Generate Triage Report
+          </button>
         </div>
-      `).openPopup();
-    });
+      </div>
+    `;
+
+    if (mapEngine === "maplibre" && mapLibreMap) {
+      if (tempMarker) tempMarker.remove();
+      const el = document.createElement("div");
+      el.className = "maplibre-3d-marker";
+      el.style.backgroundColor = "#06b6d4";
+      tempMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml)).addTo(mapLibreMap);
+      tempMarker.togglePopup();
+    } else if (map) {
+      if (tempMarker) map.removeLayer(tempMarker);
+      tempMarker = L.circleMarker([lat, lng], { radius: 9, fillColor: "#06b6d4", color: "#ffffff", weight: 2, opacity: 1, fillOpacity: 0.9 }).addTo(map);
+      tempMarker.bindPopup(popupHtml).openPopup();
+    }
   }
 
   window.focusReportForm = function() {
@@ -166,55 +188,102 @@ document.addEventListener("DOMContentLoaded", () => {
     triageForm.dispatchEvent(new Event("submit"));
   };
 
-  // Render Map Markers
+  // Render Map Markers in 3D / 2D
   function renderMapMarkers(reports) {
-    // Clear existing markers
-    mapMarkers.forEach(marker => map.removeLayer(marker));
-    mapMarkers = [];
+    if (mapEngine === "maplibre" && mapLibreMap) {
+      mapMarkers.forEach(m => m.remove());
+      mapMarkers = [];
+      if (!reports || reports.length === 0) return;
 
-    if (!reports || reports.length === 0) return;
+      const bounds = new maplibregl.LngLatBounds();
+      reports.forEach(report => {
+        const color = urgencyColors[report.predicted_urgency] || "#94a3b8";
+        const isCritical = report.predicted_urgency === "critical";
 
-    const bounds = L.latLngBounds();
+        const el = document.createElement("div");
+        el.className = `maplibre-3d-marker ${report.predicted_urgency}`;
+        el.style.backgroundColor = color;
+        if (isCritical) {
+          el.style.width = "24px";
+          el.style.height = "24px";
+        }
 
-    reports.forEach(report => {
-      const color = urgencyColors[report.predicted_urgency] || "#94a3b8";
-      const isCritical = report.predicted_urgency === "critical";
-
-      const circleMarker = L.circleMarker([report.latitude, report.longitude], {
-        radius: isCritical ? 10 : 7,
-        fillColor: color,
-        color: "#ffffff",
-        weight: isCritical ? 2 : 1,
-        opacity: 0.9,
-        fillOpacity: 0.85
-      }).addTo(map);
-
-      // HTML Popup details
-      const popupHtml = `
-        <div class="popup-content">
-          <h4>
-            <span>${report.report_id}</span>
-            <span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span>
-          </h4>
-          <p style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📍 ${escapeHtml(report.address || "Mumbai")}</p>
-          <p class="popup-text">"${report.text}"</p>
-          <div class="popup-meta" style="margin-bottom: 8px;">
-            <strong>Resources:</strong> ${report.resources}<br>
-            <strong>Cluster:</strong> Zone #${report.cluster_id}
+        const popupHtml = `
+          <div class="popup-content">
+            <h4>
+              <span>${report.report_id}</span>
+              <span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span>
+            </h4>
+            <p style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📍 ${escapeHtml(report.address || "Mumbai")}</p>
+            <p class="popup-text">"${report.text}"</p>
+            <div class="popup-meta" style="margin-bottom: 8px;">
+              <strong>Resources:</strong> ${report.resources}<br>
+              <strong>Cluster:</strong> Zone #${report.cluster_id}
+            </div>
+            <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')" style="width: 100%; justify-content: center;">
+              🤖 Generate AI Dispatch Plan
+            </button>
           </div>
-          <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')" style="width: 100%; justify-content: center;">
-            🤖 Generate AI Dispatch Plan
-          </button>
-        </div>
-      `;
+        `;
 
-      circleMarker.bindPopup(popupHtml);
-      mapMarkers.push(circleMarker);
-      bounds.extend([report.latitude, report.longitude]);
-    });
+        const marker = new maplibregl.Marker({ element: el })
+          .setLngLat([report.longitude, report.latitude])
+          .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupHtml))
+          .addTo(mapLibreMap);
 
-    if (reports.length > 0 && !tempMarker) {
-      map.fitBounds(bounds, { padding: [30, 30] });
+        mapMarkers.push(marker);
+        bounds.extend([report.longitude, report.latitude]);
+      });
+
+      if (reports.length > 0 && !tempMarker) {
+        mapLibreMap.fitBounds(bounds, { padding: 40, maxZoom: 14 });
+      }
+
+    } else if (map) {
+      mapMarkers.forEach(marker => map.removeLayer(marker));
+      mapMarkers = [];
+      if (!reports || reports.length === 0) return;
+      const bounds = L.latLngBounds();
+
+      reports.forEach(report => {
+        const color = urgencyColors[report.predicted_urgency] || "#94a3b8";
+        const isCritical = report.predicted_urgency === "critical";
+
+        const circleMarker = L.circleMarker([report.latitude, report.longitude], {
+          radius: isCritical ? 10 : 7,
+          fillColor: color,
+          color: "#ffffff",
+          weight: isCritical ? 2 : 1,
+          opacity: 0.9,
+          fillOpacity: 0.85
+        }).addTo(map);
+
+        const popupHtml = `
+          <div class="popup-content">
+            <h4>
+              <span>${report.report_id}</span>
+              <span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span>
+            </h4>
+            <p style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📍 ${escapeHtml(report.address || "Mumbai")}</p>
+            <p class="popup-text">"${report.text}"</p>
+            <div class="popup-meta" style="margin-bottom: 8px;">
+              <strong>Resources:</strong> ${report.resources}<br>
+              <strong>Cluster:</strong> Zone #${report.cluster_id}
+            </div>
+            <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')" style="width: 100%; justify-content: center;">
+              🤖 Generate AI Dispatch Plan
+            </button>
+          </div>
+        `;
+
+        circleMarker.bindPopup(popupHtml);
+        mapMarkers.push(circleMarker);
+        bounds.extend([report.latitude, report.longitude]);
+      });
+
+      if (reports.length > 0 && !tempMarker) {
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
     }
   }
 
@@ -376,7 +445,8 @@ document.addEventListener("DOMContentLoaded", () => {
       latitudeInput.value = "";
       longitudeInput.value = "";
       if (tempMarker) {
-        map.removeLayer(tempMarker);
+        if (mapEngine === "maplibre") tempMarker.remove();
+        else if (map) map.removeLayer(tempMarker);
         tempMarker = null;
       }
 
@@ -395,7 +465,11 @@ document.addEventListener("DOMContentLoaded", () => {
       await fetchReports();
 
       // Pan map to new report
-      map.flyTo([latitude, longitude], 13, { duration: 1.5 });
+      if (mapEngine === "maplibre" && mapLibreMap) {
+        mapLibreMap.flyTo({ center: [longitude, latitude], zoom: 14, pitch: 50, speed: 1.2 });
+      } else if (map) {
+        map.flyTo([latitude, longitude], 13, { duration: 1.5 });
+      }
 
     } catch (err) {
       alert("Error processing report: " + err.message);
