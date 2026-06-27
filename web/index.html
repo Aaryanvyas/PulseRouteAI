@@ -171,6 +171,7 @@
               <th>Cluster</th>
               <th>NLP Explanation</th>
               <th>Coordinates</th>
+              <th>AI Dispatch Action</th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -185,6 +186,25 @@
       <p>PulseRoute AI &copy; 2026 Emergency Command Center &bull; Built with NLP Logistic Regression, Haversine Geospatial Clustering & Leaflet.js</p>
     </footer>
 
+  </div>
+
+  <!-- AI Agent Dispatch Plan Modal Overlay -->
+  <div id="agent-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="agent-avatar">🤖</span>
+          <div>
+            <h3>Autonomous AI Dispatch Plan</h3>
+            <p id="modal-subtitle" class="subtitle">Generating tactical emergency routing & unit allocations...</p>
+          </div>
+        </div>
+        <button id="modal-close" class="modal-close-btn">&times;</button>
+      </div>
+      <div id="modal-body" class="modal-body">
+        <!-- AI Agent output dynamically injected here -->
+      </div>
+    </div>
   </div>
 
   <!-- Leaflet GIS JS -->

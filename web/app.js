@@ -111,10 +111,13 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span>
           </h4>
           <p class="popup-text">"${report.text}"</p>
-          <div class="popup-meta">
+          <div class="popup-meta" style="margin-bottom: 8px;">
             <strong>Resources:</strong> ${report.resources}<br>
             <strong>Cluster:</strong> Zone #${report.cluster_id}
           </div>
+          <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')" style="width: 100%; justify-content: center;">
+            🤖 Generate AI Dispatch Plan
+          </button>
         </div>
       `;
 
@@ -214,13 +217,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tr.innerHTML = `
         <td><strong>${report.report_id}</strong></td>
-        <td style="max-width: 320px; font-weight: 500;">${escapeHtml(report.text)}</td>
+        <td style="max-width: 300px; font-weight: 500;">${escapeHtml(report.text)}</td>
         <td><span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span></td>
         <td><div class="resource-tags">${resourceList}</div></td>
         <td><span class="cluster-pill">Cluster #${report.cluster_id}</span></td>
         <td><span class="explanation-text">${escapeHtml(report.explanation)}</span></td>
         <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">
           ${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}
+        </td>
+        <td>
+          <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')">
+            🤖 AI Plan
+          </button>
         </td>
       `;
 
@@ -315,6 +323,92 @@ document.addEventListener("DOMContentLoaded", () => {
     searchQuery = e.target.value;
     updateUI();
   });
+
+  // Modal Controls
+  const agentModal = document.getElementById("agent-modal");
+  const modalClose = document.getElementById("modal-close");
+  const modalBody = document.getElementById("modal-body");
+  const modalSubtitle = document.getElementById("modal-subtitle");
+
+  if (modalClose) {
+    modalClose.addEventListener("click", () => {
+      agentModal.classList.add("hidden");
+    });
+  }
+
+  window.addEventListener("click", (e) => {
+    if (e.target === agentModal) {
+      agentModal.classList.add("hidden");
+    }
+  });
+
+  // Global trigger for AI Dispatch Agent
+  window.triggerAgentDispatch = async function(reportId) {
+    agentModal.classList.remove("hidden");
+    modalSubtitle.textContent = `Analyzing incident ${reportId} & selecting optimal emergency hub...`;
+    modalBody.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+        <div class="status-dot" style="margin: 0 auto 16px auto; width: 16px; height: 16px; background: #a855f7; box-shadow: 0 0 15px #a855f7;"></div>
+        <p style="font-family: var(--font-heading); font-size: 1.1rem; color: #f8fafc;">AI Dispatch Agent Thinking...</p>
+        <p style="font-size: 0.85rem; margin-top: 6px;">Computing Haversine distances to regional trauma centers & emergency squads.</p>
+      </div>
+    `;
+
+    try {
+      const response = await fetch("/api/agent/dispatch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ report_id: reportId })
+      });
+
+      if (!response.ok) throw new Error("Failed to generate dispatch plan");
+
+      const data = await response.json();
+      const plan = data.dispatch_plan;
+
+      modalSubtitle.textContent = `Tactical Plan formulated for Incident ${plan.report_id} (${plan.urgency.toUpperCase()} Priority)`;
+
+      const unitsHtml = plan.recommended_units.map(u => `<span class="resource-tag" style="background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); color: #e9d5ff;">${u}</span>`).join(" ");
+      const stepsHtml = plan.tactical_instructions.map((step, idx) => `
+        <li class="instruction-item">
+          <span style="font-weight: 700; color: var(--accent-cyan); min-width: 20px;">${idx + 1}.</span>
+          <span>${step}</span>
+        </li>
+      `).join("");
+
+      modalBody.innerHTML = `
+        <div class="dispatch-card-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div>
+              <span style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase;">Primary Emergency Hub</span>
+              <h4 style="font-family: var(--font-heading); font-size: 1.1rem; color: #38bdf8; margin-top: 2px;">${plan.primary_facility.name}</h4>
+            </div>
+            <div style="text-align: right;">
+              <span style="font-size: 0.8rem; color: var(--text-dim);">Proximity</span>
+              <p style="font-weight: 700; color: #34d399;">${plan.distance_km} km away</p>
+            </div>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">
+            <strong>Facility Type:</strong> ${plan.primary_facility.type.replace("_", " ").toUpperCase()} &bull; 
+            <strong>Est. Arrival ETA:</strong> ~${plan.estimated_arrival_mins} mins
+          </p>
+        </div>
+
+        <div>
+          <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-main); margin-bottom: 8px;">Recommended Deployment Units:</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">${unitsHtml}</div>
+        </div>
+
+        <div>
+          <h4 style="font-family: var(--font-heading); font-size: 0.95rem; color: var(--text-main); margin-bottom: 8px;">Tactical Dispatch Directives:</h4>
+          <ul class="instruction-list">${stepsHtml}</ul>
+        </div>
+      `;
+
+    } catch (err) {
+      modalBody.innerHTML = `<p style="color: #ef4444; text-align: center;">Error generating plan: ${err.message}</p>`;
+    }
+  };
 
   // Bootstrapping
   initMap();
