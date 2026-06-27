@@ -11,12 +11,14 @@ PulseRoute AI is a resume-ready AIML project that converts noisy emergency repor
 
 ## Features
 
+- Interactive Web Dashboard: Real-time Emergency Command Center with Leaflet GIS map visualization and dynamic incident dispatching console.
+- REST API: Zero-dependency Python backend serving incident triage predictions and spatial cluster data via endpoints (`/api/reports`, `/api/triage`, `/api/stats`).
 - Urgency classifier: predicts `critical`, `high`, `medium`, or `low`.
 - Resource extraction: detects needs such as ambulance, food, water, rescue, shelter, and electricity.
 - Location intelligence: clusters reports using latitude and longitude.
 - Explainability: returns keywords that influenced the urgency decision.
 - Batch triage: scores every report and writes a clean CSV output.
-- Tests: includes lightweight unit tests for core behavior.
+- Tests: includes unit & integration tests for core logic and REST endpoints.
 
 ## Project Structure
 
@@ -33,14 +35,21 @@ PulseRouteAI/
       geo.py
       model.py
       resources.py
+  web/
+    index.html
+    styles.css
+    app.js
   tests/
     test_core.py
+    test_server.py
+  server.py
   pyproject.toml
   README.md
 ```
 
 ## Quick Start
 
+### 1. CLI Processing
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
@@ -48,7 +57,14 @@ pip install -e .
 python -m pulseroute.cli --input data/sample_reports.csv --output triage_output.csv
 ```
 
-If `scikit-learn` is installed, PulseRoute trains a TF-IDF logistic regression model. If it is not installed, the project falls back to a deterministic keyword model so the demo still runs.
+### 2. Interactive Web Dashboard & REST API
+Launch the standalone web server:
+```bash
+python server.py
+```
+Then open your web browser and navigate to `http://localhost:8000`.
+
+If `scikit-learn` is installed, PulseRoute trains a TF-IDF logistic regression model. If it is not installed, the project falls back to a deterministic keyword model so the demo still runs cleanly out-of-the-box.
 
 Run tests:
 
@@ -70,9 +86,10 @@ explanation: trapped,injured,collapsed
 ## Resume Bullets
 
 - Built PulseRoute AI, an NLP-based disaster triage system that classifies emergency reports by urgency and extracts resource needs from noisy text.
+- Developed an interactive Emergency Command Center web application and zero-dependency REST API with Leaflet GIS spatial mapping and real-time report dispatching.
 - Implemented an explainable TF-IDF logistic regression pipeline with a fallback rules model, enabling reproducible inference without GPU dependency.
 - Added geospatial incident clustering using haversine distance to group nearby emergencies for response prioritization.
-- Designed a modular Python package with CLI batch processing, test coverage, and clean CSV input/output for dashboard or API integration.
+- Designed a modular Python package with CLI batch processing, full test coverage, and clean CSV input/output for dashboard or API integration.
 
 ## Extension Ideas
 
