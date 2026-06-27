@@ -1,6 +1,6 @@
 # PulseRoute AI
 
-PulseRoute AI is an emergency report triage system that converts unstructured distress messages (field reports, calls, tweets) into prioritized, actionable intelligence. It automatically classifies urgency levels, extracts required emergency resources, groups geographically clustered incidents, provides keyword-based explanations, and displays everything on a real-time GIS Command Center dashboard.
+PulseRoute AI is an emergency report triage system that converts unstructured distress messages (field reports, calls, tweets) into prioritized, actionable intelligence. It automatically classifies urgency levels, extracts required emergency resources, groups geographically clustered incidents, provides keyword-based explanations, and displays everything on a real-time 3D GIS Command Center dashboard.
 
 I built this project to tackle a core challenge in disaster management: during natural disasters or major emergencies, first responders receive thousands of incoming messages and need an automated way to instantly prioritize life-threatening situations and allocate resources effectively.
 
@@ -8,7 +8,7 @@ I built this project to tackle a core challenge in disaster management: during n
 
 ## Technical Architecture
 
-The core of PulseRoute AI is modularly designed around Python systems, Machine Learning, and GIS mapping.
+The core of PulseRoute AI is modularly designed around Python systems, Machine Learning, and 3D GIS WebGL mapping.
 
 ### 1. Natural Language Urgency Classification (`src/pulseroute/model.py`)
 - **Primary Pipeline**: Implements a `scikit-learn` pipeline using `TfidfVectorizer` (extracting unigrams and bigrams) and a balanced `LogisticRegression` classifier to predict urgency across four levels: `critical`, `high`, `medium`, and `low`.
@@ -17,23 +17,25 @@ The core of PulseRoute AI is modularly designed around Python systems, Machine L
 ### 2. Emergency Resource Entity Extraction (`src/pulseroute/resources.py`)
 - Uses regex normalization and keyword taxonomy mapping to automatically identify emergency resource requirements: `ambulance`, `rescue`, `food`, `water`, `shelter`, `electricity`, `fire`, and `road_clearance`.
 
-### 3. Geospatial Incident Clustering (`src/pulseroute/geo.py`)
+### 3. Geospatial Incident Clustering & Address Resolution (`src/pulseroute/geo.py` & `data.py`)
 - Applies the **Haversine formula** to calculate exact spherical distances across latitude and longitude coordinates.
 - Dynamically groups reports within a radial threshold (default `4.0 km`) into spatial cluster IDs, helping dispatch teams identify high-density disaster zones.
+- Includes automated neighborhood resolution and exact street address resolution for every incident pin.
 
 ### 4. Keyword Attribution & Explainability (`src/pulseroute/explain.py`)
 - Generates transparent, human-readable explanations for every model decision by isolating top contributing keywords (`trapped`, `bleeding`, `collapsed`, `oxygen`, etc.).
 
 ### 5. Autonomous AI Dispatch Agent (`src/pulseroute/agent.py`)
 - Serves as an automated dispatch coordinator. When a critical report is processed, the agent queries regional emergency facilities (hospitals, fire stations, relief shelters), calculates exact proximity (km) and arrival ETAs, recommends specific response units, and generates step-by-step tactical directives.
+- Features global dynamic hub synthesis to formulate tactical dispatch plans for any location worldwide.
 
 ### 6. Zero-Dependency REST API & Web Server (`server.py`)
 - Built using Python's native `http.server` standard library modules to keep the backend lightweight without requiring external web frameworks.
 - Maintains in-memory report state, exposes REST endpoints (`/api/reports`, `/api/triage`, `/api/stats`, `/api/agent/dispatch`), and hosts static web assets.
 
-### 7. Interactive Command Center Dashboard (`web/`)
-- A single-page application built with HTML5, Vanilla CSS3 (glassmorphic dark theme), Vanilla JavaScript, and Leaflet.js GIS mapping.
-- Includes live metric cards, interactive map pin popups, click-to-pick coordinate selection, an incident table, and a modal for the AI Dispatch Agent's tactical plans.
+### 7. Interactive 3D WebGL Command Center (`web/`)
+- A modern single-page application built with HTML5, Vanilla CSS3 (glassmorphic dark theme), Vanilla JavaScript, and **MapLibre GL JS 3D Vector Maps**.
+- Features 3D camera pitch and bearing controls, live metric cards, interactive map pin popups with real-time OpenStreetMap reverse geocoding, one-click auto-triage report generation, and an interactive modal for the AI Dispatch Agent's tactical plans.
 
 ---
 
@@ -48,15 +50,15 @@ PulseRouteAI/
 │       ├── __init__.py            # Package exports
 │       ├── agent.py               # Autonomous AI Dispatch Agent & Hub Locator
 │       ├── cli.py                 # Batch processing CLI script
-│       ├── data.py                # Data structures & CSV handling
+│       ├── data.py                # Data structures, address & neighborhood handling
 │       ├── explain.py             # Keyword attribution logic
 │       ├── geo.py                 # Haversine spatial clustering
 │       ├── model.py               # TF-IDF + Logistic Regression & Rules fallback
 │       └── resources.py           # Resource entity extraction
-├── web/                           # Command Center Web Dashboard
-│   ├── index.html                 # Dashboard HTML layout & Leaflet map container
-│   ├── styles.css                 # Custom CSS design system
-│   └── app.js                     # Dashboard state, map logic & API integration
+├── web/                           # Command Center 3D Web Dashboard
+│   ├── index.html                 # Dashboard HTML layout & MapLibre 3D container
+│   ├── styles.css                 # Custom CSS design system & 3D popup styles
+│   └── app.js                     # 3D map engine, reverse geocoding & API integration
 ├── tests/                         # Test suite
 │   ├── test_agent.py              # Dispatch agent tests
 │   ├── test_core.py               # Core ML & spatial unit tests
@@ -85,6 +87,7 @@ Retrieves all current triaged emergency reports.
       "text": "Building wall collapsed, two people injured and trapped under debris",
       "latitude": 19.1136,
       "longitude": 72.8697,
+      "address": "Marol Naka Industrial Estate, Andheri East, Mumbai",
       "predicted_urgency": "critical",
       "resources": "ambulance,rescue",
       "cluster_id": 2,
@@ -101,6 +104,7 @@ Submits a new raw report for instant ML triage and clustering.
 ```json
 {
   "text": "Flash flood warning, family stranded on roof needing food and clean water",
+  "address": "Plot 45, Premier Road, Kurla East, Mumbai",
   "latitude": 19.0750,
   "longitude": 72.8800
 }
@@ -141,7 +145,7 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-### 2. Start the Web Dashboard & REST API
+### 2. Start the 3D Web Dashboard & REST API
 Run the server:
 ```bash
 python server.py
