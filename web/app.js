@@ -133,8 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  let hasCustomLocationTarget = false;
+
   // Helper function to fly to any coordinate globally
   function flyToCoordinate(lat, lng, zoom = 13) {
+    hasCustomLocationTarget = true;
     if (mapEngine === "maplibre" && mapLibreMap) {
       mapLibreMap.flyTo({ center: [lng, lat], zoom: zoom, pitch: 48, speed: 1.4 });
     } else if (map) {
@@ -383,7 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
         bounds.extend([report.longitude, report.latitude]);
       });
 
-      if (reports.length > 0 && !tempMarker) {
+      if (reports.length > 0 && !tempMarker && !hasCustomLocationTarget) {
         mapLibreMap.fitBounds(bounds, { padding: 40, maxZoom: 14 });
       }
 
@@ -429,7 +432,7 @@ document.addEventListener("DOMContentLoaded", () => {
         bounds.extend([report.latitude, report.longitude]);
       });
 
-      if (reports.length > 0 && !tempMarker) {
+      if (reports.length > 0 && !tempMarker && !hasCustomLocationTarget) {
         map.fitBounds(bounds, { padding: [30, 30] });
       }
     }
