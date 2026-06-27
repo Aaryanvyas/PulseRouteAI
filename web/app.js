@@ -70,6 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const citySearchInput = document.getElementById("city-search-input");
+  const myLocationBtn = document.getElementById("my-location-btn");
+
   // Initialize 3D GIS Map
   function initMap() {
     const defaultLat = 19.0800;
@@ -114,6 +117,82 @@ document.addEventListener("DOMContentLoaded", () => {
       map = L.map("map", { zoomControl: true, attributionControl: false }).setView([defaultLat, defaultLng], 11);
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd" }).addTo(map);
       map.on("click", (e) => handleMapClick(e.latlng.lat, e.latlng.lng));
+    }
+
+    // Attempt Browser Geolocation Auto-Detection
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const uLat = pos.coords.latitude;
+          const uLng = pos.coords.longitude;
+          flyToCoordinate(uLat, uLng, 13);
+        },
+        () => { console.log("[PulseRoute GIS] Geolocation permission denied or unavailable, using regional center."); },
+        { timeout: 5000 }
+      );
+    }
+  }
+
+  // Helper function to fly to any coordinate globally
+  function flyToCoordinate(lat, lng, zoom = 13) {
+    if (mapEngine === "maplibre" && mapLibreMap) {
+      mapLibreMap.flyTo({ center: [lng, lat], zoom: zoom, pitch: 48, speed: 1.4 });
+    } else if (map) {
+      map.flyTo([lat, lng], zoom, { duration: 1.5 });
+    }
+  }
+
+  // My Location Button Event Listener
+  if (myLocationBtn) {
+    myLocationBtn.addEventListener("click", () => {
+      if (navigator.geolocation) {
+        myLocationBtn.textContent = "⌛ Locating...";
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const uLat = pos.coords.latitude;
+            const uLng = pos.coords.longitude;
+            flyToCoordinate(uLat, uLng, 14);
+            myLocationBtn.textContent = "📍 My Location";
+            handleMapClick(uLat, uLng);
+          },
+          (err) => {
+            alert("Could not detect your exact location: " + err.message);
+            myLocationBtn.textContent = "📍 My Location";
+          }
+        );
+      }
+    });
+  }
+
+  // City Search Bar Event Listener
+  if (citySearchInput) {
+    let searchTimeout = null;
+    citySearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        performCitySearch(citySearchInput.value.trim());
+      }
+    });
+  }
+
+  async function performCitySearch(query) {
+    if (!query) return;
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const results = await res.json();
+        if (results && results.length > 0) {
+          const target = results[0];
+          const lat = parseFloat(target.lat);
+          const lng = parseFloat(target.lon);
+          flyToCoordinate(lat, lng, 12);
+          handleMapClick(lat, lng);
+        } else {
+          alert(`City or location '${query}' not found.`);
+        }
+      }
+    } catch (err) {
+      console.warn("[PulseRoute GIS] City search error:", err);
     }
   }
 
