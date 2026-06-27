@@ -86,16 +86,19 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg>
             <h2>Geospatial Incident Map</h2>
           </div>
-          <div class="map-legend">
-            <span class="legend-item"><span class="dot critical"></span> Critical</span>
-            <span class="legend-item"><span class="dot high"></span> High</span>
-            <span class="legend-item"><span class="dot medium"></span> Medium</span>
-            <span class="legend-item"><span class="dot low"></span> Low</span>
+          <div class="map-controls-group">
+            <button id="toggle-3d-btn" class="btn-toggle-3d">🛰️ Toggle 3D Perspective</button>
+            <div class="map-legend">
+              <span class="legend-item"><span class="dot critical"></span> Critical</span>
+              <span class="legend-item"><span class="dot high"></span> High</span>
+              <span class="legend-item"><span class="dot medium"></span> Medium</span>
+              <span class="legend-item"><span class="dot low"></span> Low</span>
+            </div>
           </div>
         </div>
-        <div class="map-container">
+        <div class="map-container" id="map-wrapper">
           <div id="map"></div>
-          <div class="map-hint">💡 Click anywhere on the map to set incident coordinates for quick reporting</div>
+          <div class="map-hint">💡 Click anywhere on the map to capture exact street coordinates</div>
         </div>
       </section>
 
@@ -110,7 +113,12 @@
         <form id="triage-form" class="triage-form">
           <div class="form-group">
             <label for="report-text">Emergency Field Report / Call Text</label>
-            <textarea id="report-text" placeholder="e.g., Building wall collapsed, two workers injured and stuck under heavy debris near school..." required rows="4"></textarea>
+            <textarea id="report-text" placeholder="e.g., Building wall collapsed, two workers injured and stuck under heavy debris near school..." required rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="address">Exact Street Address / Landmark</label>
+            <input type="text" id="address" placeholder="e.g., Plot 45, Premier Road, Kurla West, Mumbai" required>
           </div>
 
           <div class="form-row">
@@ -155,7 +163,7 @@
           
           <div class="search-box">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="search-input" placeholder="Search report text or resources...">
+            <input type="text" id="search-input" placeholder="Search report text, address or resources...">
           </div>
         </div>
       </div>
@@ -165,12 +173,12 @@
           <thead>
             <tr>
               <th>ID</th>
+              <th>Exact Street Address</th>
               <th>Emergency Report Description</th>
               <th>Urgency</th>
               <th>Required Resources</th>
               <th>Cluster</th>
               <th>NLP Explanation</th>
-              <th>Coordinates</th>
               <th>AI Dispatch Action</th>
             </tr>
           </thead>

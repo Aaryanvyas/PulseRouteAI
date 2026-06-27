@@ -24,6 +24,7 @@ def triage(input_path: str | Path, output_path: str | Path) -> list[dict[str, ob
                 "text": report.text,
                 "latitude": report.latitude,
                 "longitude": report.longitude,
+                "address": report.address,
                 "predicted_urgency": prediction,
                 "resources": ",".join(extract_resources(report.text)) or "none",
                 "cluster_id": clusters[report.report_id],

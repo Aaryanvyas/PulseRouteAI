@@ -66,6 +66,7 @@ def recalculate_triage() -> None:
                 "text": report.text,
                 "latitude": report.latitude,
                 "longitude": report.longitude,
+                "address": report.address,
                 "predicted_urgency": prediction,
                 "resources": ",".join(extract_resources(report.text)) or "none",
                 "cluster_id": clusters[report.report_id],
@@ -154,6 +155,7 @@ class PulseRouteHandler(BaseHTTPRequestHandler):
                 text = payload.get("text", "").strip()
                 lat = float(payload.get("latitude", 0.0))
                 lon = float(payload.get("longitude", 0.0))
+                user_addr = payload.get("address", "").strip()
 
                 if not text:
                     self.send_response(400)
@@ -161,6 +163,9 @@ class PulseRouteHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({"error": "Report text is required"}).encode("utf-8"))
                     return
+
+                from pulseroute.data import resolve_neighborhood
+                final_addr = user_addr if user_addr else resolve_neighborhood(lat, lon)
 
                 # Generate new ID
                 next_id_num = len(reports_list) + 1
@@ -171,6 +176,7 @@ class PulseRouteHandler(BaseHTTPRequestHandler):
                     text=text,
                     latitude=lat,
                     longitude=lon,
+                    address=final_addr,
                 )
 
                 reports_list.append(new_report)

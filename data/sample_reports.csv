@@ -1,22 +1,21 @@
-report_id,text,latitude,longitude,urgency
-R001,"Water has entered the ground floor and elderly people need help moving out",19.0760,72.8777,high
-R002,"Power is out in the lane but everyone is safe and waiting",19.0821,72.8912,low
-R003,"Family stuck on roof after flooding, children have no food or drinking water",19.0712,72.8842,critical
-R004,"Building wall collapsed, two people injured and trapped under debris",19.1136,72.8697,critical
-R005,"Road blocked by fallen tree, traffic moving slowly",19.1214,72.8503,medium
-R006,"Need blankets and temporary shelter for fifteen people after fire",19.0553,72.8291,high
-R007,"Minor waterlogging near market, shops are still open",19.0895,72.8654,low
-R008,"Pregnant woman needs ambulance, bridge is flooded and unreachable",19.0675,72.9021,critical
-R009,"School shelter needs more food packets and clean water by evening",19.1402,72.8311,high
-R010,"Streetlight damaged and sparks visible near electric pole",19.0312,72.8424,medium
-R011,"Local clinic running out of oxygen cylinders after accident",19.1041,72.8952,critical
-R012,"People waiting at bus stop due to heavy rain",19.1198,72.9120,low
-R013,"Rescue boat required for flooded colony, several homes surrounded",19.0628,72.8741,high
-R014,"Fire spreading near warehouse, workers evacuated but smoke is heavy",19.1525,72.8772,high
-R015,"Small landslide reported, one lane closed, no injuries",19.1842,72.8465,medium
-R016,"Child missing after crowd panic near relief camp",19.0977,72.8239,critical
-R017,"Need medical help for fever and dehydration in temporary shelter",19.1301,72.8581,high
-R018,"Drain overflowing outside apartment gate",19.0499,72.8615,low
-R019,"Transformer blast caused fire and nearby houses lost electricity",19.1632,72.9014,high
-R020,"Ambulance delayed, accident victim bleeding on highway",19.1762,72.8758,critical
-
+report_id,text,latitude,longitude,address,urgency
+R001,"Water has entered the ground floor and elderly people need help moving out",19.0760,72.8777,"14 LBS Road, Near Kurla West Railway Station, Mumbai",high
+R002,"Power is out in the lane but everyone is safe and waiting",19.0821,72.8912,"Lane 3, Ghatkopar East Industrial Area, Mumbai",low
+R003,"Family stuck on roof after flooding, children have no food or drinking water",19.0712,72.8842,"Plot 45, Premier Road, Kurla East, Mumbai",critical
+R004,"Building wall collapsed, two people injured and trapped under debris",19.1136,72.8697,"Marol Naka Industrial Estate, Andheri East, Mumbai",critical
+R005,"Road blocked by fallen tree, traffic moving slowly",19.1214,72.8503,"SV Road Junction, Near Andheri West Metro Station, Mumbai",medium
+R006,"Need blankets and temporary shelter for fifteen people after fire",19.0553,72.8291,"Hill Road Market Compound, Bandra West, Mumbai",high
+R007,"Minor waterlogging near market, shops are still open",19.0895,72.8654,"Santacruz East Vegetable Market, Mumbai",low
+R008,"Pregnant woman needs ambulance, bridge is flooded and unreachable",19.0675,72.9021,"Tilak Nagar Colony, Near Shell Colony Flyover, Chembur, Mumbai",critical
+R009,"School shelter needs more food packets and clean water by evening",19.1402,72.8311,"St. Xavier High School Ground, Malad West, Mumbai",high
+R010,"Streetlight damaged and sparks visible near electric pole",19.0312,72.8424,"Dadar TT Circle, Near Swarmanand Hotel, Dadar, Mumbai",medium
+R011,"Local clinic running out of oxygen cylinders after accident",19.1041,72.8952,"Saki Naka Telecom Flyover Junction, Powai Road, Mumbai",critical
+R012,"People waiting at bus stop due to heavy rain",19.1198,72.9120,"Hiranandani Gardens Main Gate, Powai, Mumbai",low
+R013,"Rescue boat required for flooded colony, several homes surrounded",19.0628,72.8741,"Mithi River Bank Housing Colony, Kalina, Mumbai",high
+R014,"Fire spreading near warehouse, workers evacuated but smoke is heavy",19.1525,72.8772,"Goregaon East Industrial Estate, Mumbai",high
+R015,"Small landslide reported, one lane closed, no injuries",19.1842,72.8465,"Western Express Highway Flyover Base, Borivali East, Mumbai",medium
+R016,"Child missing after crowd panic near relief camp",19.0977,72.8239,"Juhu Beach Promenade Relief Center, Mumbai",critical
+R017,"Need medical help for fever and dehydration in temporary shelter",19.1301,72.8581,"MIDC Central Road Shelter, Andheri East, Mumbai",high
+R018,"Drain overflowing outside apartment gate",19.0499,72.8615,"Mahim West Seaface Apartments, Mumbai",low
+R019,"Transformer blast caused fire and nearby houses lost electricity",19.1632,72.9014,"Vikhroli Park Site Colony, Mumbai",high
+R020,"Ambulance delayed, accident victim bleeding on highway",19.1762,72.8758,"Mulund West Toll Naka, Eastern Express Highway, Mumbai",critical

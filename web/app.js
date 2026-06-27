@@ -37,10 +37,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const triageForm = document.getElementById("triage-form");
   const reportTextInput = document.getElementById("report-text");
+  const addressInput = document.getElementById("address");
   const latitudeInput = document.getElementById("latitude");
   const longitudeInput = document.getElementById("longitude");
   const submitBtn = document.getElementById("submit-btn");
   const triageResult = document.getElementById("triage-result");
+  const toggle3dBtn = document.getElementById("toggle-3d-btn");
+  const mapWrapper = document.getElementById("map-wrapper");
+
+  let is3dMode = false;
+  if (toggle3dBtn && mapWrapper) {
+    toggle3dBtn.addEventListener("click", () => {
+      is3dMode = !is3dMode;
+      if (is3dMode) {
+        mapWrapper.classList.add("mode-3d");
+        toggle3dBtn.classList.add("active");
+        toggle3dBtn.textContent = "🛰️ 3D Perspective Active";
+      } else {
+        mapWrapper.classList.remove("mode-3d");
+        toggle3dBtn.classList.remove("active");
+        toggle3dBtn.textContent = "🛰️ Toggle 3D Perspective";
+      }
+      setTimeout(() => { map.invalidateSize(); }, 300);
+    });
+  }
 
   // Initialize Map
   function initMap() {
@@ -110,6 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>${report.report_id}</span>
             <span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span>
           </h4>
+          <p style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">📍 ${escapeHtml(report.address || "Mumbai")}</p>
           <p class="popup-text">"${report.text}"</p>
           <div class="popup-meta" style="margin-bottom: 8px;">
             <strong>Resources:</strong> ${report.resources}<br>
@@ -183,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const query = searchQuery.toLowerCase();
       const matchesSearch = !query || 
         report.text.toLowerCase().includes(query) ||
+        (report.address && report.address.toLowerCase().includes(query)) ||
         report.resources.toLowerCase().includes(query) ||
         report.report_id.toLowerCase().includes(query) ||
         report.explanation.toLowerCase().includes(query);
@@ -199,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (filtered.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">
+          <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 30px;">
             No emergency reports match the current filter criteria.
           </td>
         </tr>
@@ -217,14 +239,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tr.innerHTML = `
         <td><strong>${report.report_id}</strong></td>
-        <td style="max-width: 300px; font-weight: 500;">${escapeHtml(report.text)}</td>
+        <td style="color: #38bdf8; font-weight: 600; min-width: 160px;">📍 ${escapeHtml(report.address || "Mumbai")}</td>
+        <td style="max-width: 260px; font-weight: 500;">${escapeHtml(report.text)}</td>
         <td><span class="urgency-badge ${report.predicted_urgency}">${report.predicted_urgency}</span></td>
         <td><div class="resource-tags">${resourceList}</div></td>
         <td><span class="cluster-pill">Cluster #${report.cluster_id}</span></td>
         <td><span class="explanation-text">${escapeHtml(report.explanation)}</span></td>
-        <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">
-          ${report.latitude.toFixed(4)}, ${report.longitude.toFixed(4)}
-        </td>
         <td>
           <button class="btn-agent" onclick="triggerAgentDispatch('${report.report_id}')">
             🤖 AI Plan
@@ -247,6 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     const text = reportTextInput.value.trim();
+    const address = addressInput ? addressInput.value.trim() : "";
     const latitude = parseFloat(latitudeInput.value);
     const longitude = parseFloat(longitudeInput.value);
 
@@ -263,7 +284,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, latitude, longitude })
+        body: JSON.stringify({ text, address, latitude, longitude })
       });
 
       if (!response.ok) {
@@ -276,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Reset Form & Temp Marker
       reportTextInput.value = "";
+      if (addressInput) addressInput.value = "";
       latitudeInput.value = "";
       longitudeInput.value = "";
       if (tempMarker) {
