@@ -1,5 +1,6 @@
 """PulseRoute AI package."""
 
+from .agent import EMERGENCY_FACILITIES, DispatchAgent, DispatchPlan
 from .cli import triage
 from .data import Report, load_reports, write_triage
 from .explain import explain_prediction
@@ -18,5 +19,8 @@ __all__ = [
     "extract_resources",
     "assign_location_clusters",
     "explain_prediction",
+    "DispatchAgent",
+    "DispatchPlan",
+    "EMERGENCY_FACILITIES",
 ]
 
