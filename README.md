@@ -25,13 +25,21 @@ I built this system to address a vital challenge in disaster response management
 ### 4. 🔍 Explainable AI & Keyword Attribution (`src/pulseroute/explain.py`)
 - Generates transparent, human-readable explanations for every triage decision by isolating high-impact keywords (`trapped`, `bleeding`, `collapsed`, `oxygen`, etc.) that influenced the classification score.
 
-### 5. ⚡ Zero-Dependency REST API Server (`server.py`)
-- Built entirely using Python's native standard library modules (`http.server`, `json`, `pathlib`, `mimetypes`).
-- Connects directly to core `pulseroute` package logic, maintains live in-memory state, and exposes lightweight REST endpoints while serving static web assets.
+### 5. 🤖 Autonomous AI Dispatch Agent (`src/pulseroute/agent.py`)
+- Formulates automated, tactical emergency response plans for critical and high-urgency incidents.
+- Dynamically queries regional trauma hospitals, fire stations, and disaster relief centers, computing exact proximity (km) and estimated arrival time (ETA) for dispatch teams.
+- Recommends specific response assets (e.g. *Advanced Life Support Ambulances, Hydraulic Extraction Crews*) and generates step-by-step tactical directives.
 
-### 6. 🌐 Interactive Emergency Command Center (`web/`)
+### 6. ⚡ Zero-Dependency REST API Server (`server.py`)
+- Built entirely using Python's native standard library modules (`http.server`, `json`, `pathlib`, `mimetypes`).
+- Connects directly to core `pulseroute` package logic, maintains live in-memory state, and exposes lightweight REST endpoints (`/api/reports`, `/api/triage`, `/api/stats`, `/api/agent/dispatch`) while serving static web assets.
+
+### 7. 🌐 Interactive Emergency Command Center (`web/`)
 - A modern single-page application built with **HTML5, Vanilla CSS3 (Custom Dark Glassmorphism theme), Vanilla JS, and Leaflet.js GIS mapping**.
-- Features real-time stat counters, color-coded urgency map markers with custom popups, an interactive map coordinate picker, a live report dispatch console, and filterable/searchable incident tables.
+- Features real-time stat counters, color-coded urgency map markers with custom popups, an interactive map coordinate picker, a live report dispatch console, and an interactive **AI Dispatch Plan Modal**.
+
+### 8. 🐳 Production Docker Containerization (`Dockerfile`)
+- Containerized for rapid cloud deployment (Render, AWS, GCP, Azure, Railway) using an optimized `python:3.12-slim` Docker image.
 
 ---
 
@@ -42,8 +50,9 @@ PulseRouteAI/
 ├── data/
 │   └── sample_reports.csv         # Initial dataset of emergency field reports
 ├── src/
-│   └── pulseroute/                # Core Python AIML & GIS Package
+│   └── pulseroute/                # Core Python AIML, GIS & Agent Package
 │       ├── __init__.py            # Clean API package exports
+│       ├── agent.py               # Autonomous AI Dispatch Agent & Hub Locator
 │       ├── cli.py                 # Batch processing CLI pipeline
 │       ├── data.py                # Report data models & CSV I/O
 │       ├── explain.py             # Keyword attribution & model explainability
@@ -52,11 +61,14 @@ PulseRouteAI/
 │       └── resources.py           # NLP entity extraction for emergency supplies
 ├── web/                           # Emergency Command Center Web Application
 │   ├── index.html                 # Semantic dashboard layout & Leaflet integration
-│   ├── styles.css                 # Glassmorphism design system & neon color tokens
-│   └── app.js                     # Async state management, map rendering & filters
+│   ├── styles.css                 # Glassmorphism design system & AI Modal styling
+│   └── app.js                     # Async state management, map rendering & AI Agent trigger
 ├── tests/                         # Automated Test Suite
+│   ├── test_agent.py              # AI Dispatch Agent unit tests
 │   ├── test_core.py               # Core ML, spatial & extraction unit tests
 │   └── test_server.py             # Integration tests for REST API endpoints
+├── Dockerfile                     # Containerization setup for cloud deployment
+├── .dockerignore                  # Docker build optimization file
 ├── server.py                      # Standalone REST API & Web Host Server
 ├── pyproject.toml                 # Package configuration metadata
 └── README.md                      # Project documentation
